@@ -1,0 +1,195 @@
+{
+  "name": "Task2_Workflow_VaishnaviSagare.json",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "2c68f945-1487-4968-bb9b-1224a6aa440c",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/search/repositories?q=stars:>5000&sort=stars",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        0
+      ],
+      "id": "68525cca-a44d-4080-8140-e900c8d1a854",
+      "name": "HTTP Request",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const repos = $input.first().json.items;\n\nreturn repos.slice(0, 5).map(repo => ({\n  json: {\n    name: repo.name,\n    stars: repo.stargazers_count,\n    owner: repo.owner.login,\n    url: repo.html_url\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        -16
+      ],
+      "id": "3b644376-80e2-44c6-a244-71924f25de6f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{$json[\"owner\"]}}/{{$json[\"name\"]}}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        624,
+        -16
+      ],
+      "id": "f1c4b421-7575-46b3-89db-b50bb3293695",
+      "name": "HTTP Request1",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "84ca12e5-722a-411e-869c-066cafe5d7b2",
+              "leftValue": "={{$json[\"stargazers_count\"]}}",
+              "rightValue": 100000,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        832,
+        0
+      ],
+      "id": "b5652603-62e2-4f4a-bed7-6cd26b6f2800",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "vaishnavisagare2511@gmail.com",
+        "subject": "GitHub Daily Digest",
+        "message": "=Repository Name: {{$json[\"name\"]}}  Owner: {{$json[\"owner\"]}}  Stars: {{$json[\"stargazers_count\"]}}  Repository URL: {{$json[\"html_url\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        -32
+      ],
+      "id": "57df8799-efa1-4cfa-89f4-bdbbe93ea606",
+      "name": "Send a message",
+      "webhookId": "485ab332-5977-4ce7-9a3f-4bf9be18e30f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "X8fxeuErI1NqKZDr",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f62fb36e-3693-4e0c-a2ab-82f66c347156",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ab9b71774f132eddf767cc47145a81dc24fc927e17f7c0681384a13221e2305f"
+  },
+  "id": "4rACsS44KM7gA2D5",
+  "tags": []
+}
